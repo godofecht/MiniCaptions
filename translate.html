@@ -1,0 +1,531 @@
+<html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
+	<meta content="utf-8" http-equiv="encoding" />
+	<meta name="copyright" content="&copy; 2020 Steve Seguin" />
+	<link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon" />
+	<!-- Primary Meta Tags -->
+	<title>CAPTION.Ninja - translate</title>
+	<meta name="title" content="CAPTION.Ninja" />
+	<meta name="description" content="This is a free-to-use captioning tool for OBS. Speech-to-text is done using Machine Learning" />
+	<meta name="author" content="Steve Seguin" />
+
+	
+	<style>
+		@font-face {
+		  font-family: 'Cousine';
+		  src: url('fonts/Cousine-Bold.ttf') format('truetype');
+		}
+	
+		:root {
+		  --primary-color: #2498Eb;
+		  --secondary-color: #2c3e50;
+		  --background-color: #0000;
+		  --text-color: #333;
+		  --border-radius: 4px;
+		  --cc-background: #000000;
+		  --cc-text-color: #ffffff;
+		  --cc-font-size: 24px;
+		  --cc-line-height: 1.2;
+		}
+
+		body {
+		  font-family: 'Arial', sans-serif;
+		  line-height: 1.6;
+		  color: var(--text-color);
+		  background-color: var(--background-color);
+		  margin: 0;
+		  padding: 20px;
+		}
+
+		h3 {
+		  color: var(--secondary-color);
+		  border-bottom: 2px solid var(--primary-color);
+		  padding-bottom: 10px;
+		}
+
+		a {
+		  color: var(--primary-color);
+		  text-decoration: none;
+		  font-weight:600;
+		  transition: color 0.3s ease;
+		}
+
+		a:hover {
+		  color: var(--secondary-color);
+		}
+
+		.output {
+			font-family: Cousine, monospace;
+			margin-top:15px;
+			color: black;
+			min-height: 120px;
+			font-size: 3.2em;
+			line-height: 1.1em;
+			letter-spacing: 0.0em;
+			padding: 0em;
+			padding-top:10px;
+			text-shadow: 0.05em 0.05em 0px rgba(255,255,255,1);
+		}
+		
+		.output span { 
+			background-color: black; 
+			padding: 8px 8px 0px 8px;
+			margin:0;
+		}
+
+		/* Add this new style for the caption container */
+		#caption-container {
+		  position: relative;
+		  width: 100%;
+		  height: 200px; /* Adjust as needed */
+		  overflow: hidden;
+		  background-color: var(--cc-background);
+		}
+
+		select, input[type="checkbox"] {
+		  margin: 10px 0;
+		}
+
+		select {
+		  padding: 5px;
+		  border-radius: var(--border-radius);
+		  border: 1px solid #ddd;
+		}
+
+		label {
+		  display: inline-block;
+		  margin-right: 15px;
+		}
+
+		textarea {
+		  width: 100%;
+		  padding: 10px;
+		  border: 1px solid #ddd;
+		  border-radius: var(--border-radius);
+		  resize: vertical;
+		}
+
+		#status {
+		  margin-top: 10px;
+		  font-style: italic;
+		  color: var(--secondary-color);
+		}
+
+		#whosekey {
+		  display: inline-block;
+		  padding: 5px 10px;
+		  border-radius: var(--border-radius);
+		  font-weight: bold;
+		}
+
+		#whosekey[style*="yellow"] {
+		  background-color: #ffeeba;
+		  color: #856404;
+		}
+
+		#whosekey[style*="green"] {
+		  background-color: #d4edda;
+		  color: #155724;
+		}
+
+		/* Responsive design */
+		@media (max-width: 768px) {
+		  body {
+			padding: 10px;
+		  }
+		  
+		  textarea {
+			width: calc(100% - 20px);
+		  }
+		  
+		  .output span {
+			font-size: calc(var(--cc-font-size) * 0.8);
+		  }
+		}
+		
+		.github {
+			background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAd5JREFUOE+d1MurjlEUBvDfIZQZShEGmMhQiZGZlAlyK4eEAZHcyiVRyq1cUq5FwsD1MJGJiT/AzEzRcR8xMnGOW89pv9q9fScfe/J977o8e61nP2v16HzGYBWWYA4mlbBPeI5HuI9v7fSeDnircRqTh7msMX/ALtyr42rAEbiAzX8BaruTsx0/46gBL/0HWAMe0G01YNq8Xbz5PYuN2ISvCHc5oWEsruA69mJF8a0Mr6kwD/C64mw3zpSgCfjc6nE8vhRbAE+U/+8xI4DrcKNKOol9XfJ4CimgOb0BfIilxfIds/GyS8BZeIGRJf5BAN9gWjE8xcIuwZqwZ1hQPvoDOIBRxRCiN/wj4C30lpyBNmAmYNk/Aj7G4pIz2G75I6Y2Iu0CONwlZ2Ldcl+rqmjvWhdgCdmCi1Xs0KOsxc3C5WDhcw8uI9+dzugyVZFNw3/i1jTCfoVIJmo/VDiJeJ9gPX4U1CRHs4swrnXTO8xsZjlAd9GP+WU1zcPxckGde7WMZbvy5eirl8N5bMUxHMSvYdo9igMt3znsiK29vuLI1ojYU+2dwmWdnwv3V4YskozfUAGdFmzaz4KdgiM43KomNGTW32JnGd0/IZ0A48wrhpPMdFZ+feZievjqpILf7lRg3csIRqAAAAAASUVORK5CYII=");
+			background-color: #FFF !important;
+			width: 4px;
+			height: 12px;
+			background-repeat: no-repeat;
+			display: inline-block;
+			top: 2px;
+			position: relative;
+			left: 2px;
+			filter: invert(100%);
+			-webkit-filter: invert(100%);
+		}
+	</style>
+</head>
+<body>
+	
+	<h3>This is a free-to-use captioning, transcription, and translation tool.</h3>
+	The overlay-friendly output of the text is mirrored here: 👉 <a id="shareLink" href="overlay.html" target='_blank'>*ERROR GENERATING LINK*</a>.
+	<br /><br />
+	To use this app, accept the microphone permissions on page load and then just say something outloud.
+	<br /><br />
+	Please note that this app uses your default microphone as the audio input source. You sometimes can change the default audio source via the browser's setting, but you can also change it at your system level by changing the default recording device. You can also change audio sources by using a Virtual Audio Cable, <a href='https://www.vb-audio.com/Cable/'> such as this one.</a> Using it, it becomes possible to select other sources, including microphones, speakers, and other applications.
+	<br /><br />
+	The translation component is based on code from Mozilla <a href="https://github.com/mozilla/translate">https://github.com/mozilla/translate</a>. If your language is missing though, or you want better results, I have a version <a href='https://caption.ninja/translate_premium' target='_blank'>powered by Google Cloud Translation here</a>. Check out more options and details on <a href='https://github.com/steveseguin/captionninja'>GitHub</a>.
+	<br /><br />
+	<label>
+	  From
+	  <select id="lang-from" title="Set input language via the URL `&lang=en-US` option" name="from" class="lang-select"></select>
+	</label>
+	
+	 <label>
+	  To
+	  <select id="lang-to" name="to" class="lang-select"></select>
+	</label>
+	
+	 <label>
+	 Translate with added context?
+	 <input type="checkbox" id="fullContext" />
+	 </label>
+	 <br /><br />
+	<div class="footer" id="status"></div>
+	<textarea id="input" name="input"></textarea>
+	<br />
+	<div id="output" class="output"></div>
+	
+	
+<script>
+(function (w) {
+	w.URLSearchParams = w.URLSearchParams || function (searchString) {
+		var self = this;
+		self.searchString = searchString;
+		self.get = function (name) {
+			var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(self.searchString);
+			if (results == null) {
+				return null;
+			}
+			else {
+				return decodeURI(results[1]) || 0;
+			}
+		};
+	};
+})(window);
+var urlParams = new URLSearchParams(window.location.search);
+let worker;
+let modelRegistry;
+let version;
+const status = function(message){document.getElementById("status").innerText = message;}
+const langs = {
+    "bg": "Bulgarian",
+    "cs": "Czech",
+    "nl": "Dutch",
+    "en": "English",
+    "et": "Estonian",
+    "de": "German",
+    "fr": "French",
+    "is": "Icelandic",
+    "it": "Italian",
+    "nb": "Norwegian Bokmål",
+    "nn": "Norwegian Nynorsk",
+    "fa": "Persian",
+    "pl": "Polish",
+    "pt": "Portuguese",
+    "ru": "Russian",
+    "es": "Spanish",
+    "uk": "Ukrainian"
+};
+var myLang = navigator.language || "en-US";
+if (urlParams.has("lang")){
+	myLang = urlParams.get("lang");
+} else {
+	updateURL("lang="+myLang);
+}
+var myLangCode = myLang.split("-")[0].toLowerCase();
+var targetCode = "de";
+if (myLangCode == "de"){
+	targetCode = "en";
+}
+if (urlParams.has("translate") || urlParams.has("target")){
+	targetCode = urlParams.get("translate") || urlParams.get("target") || targetCode;
+	targetCode = targetCode.split("-")[0].toLowerCase();
+} else {
+	updateURL("translate="+targetCode);
+}
+console.log("Language: "+myLang);
+const langFrom = document.getElementById("lang-from");
+const langTo = document.getElementById("lang-to");
+let supportedFromCodes = {};
+let supportedToCodes = {};
+let currentTo = null;
+if (window.Worker) {
+    worker = new Worker("worker.js?v=2");
+    worker.postMessage(["import"]);
+}
+function translateCall(text, interm=false){
+    if (!text.trim().length) return;
+    const paragraphs = text.split("\n");
+    const lngFrom = langFrom.value;
+    const lngTo = langTo.value;
+    worker.postMessage(["translate", lngFrom, lngTo, paragraphs, null, interm]);
+};
+var label = false;
+if (urlParams.has("label")){
+	label = urlParams.get("label");
+}
+var counter = 0;
+worker.onmessage = function (e) {
+    if (e.data[0] === "translate_reply" && e.data[1]) {
+        document.getElementById("output").innerText = e.data[1].join("<br /><br />");
+		counter+=1;
+		if (e.data[3]||false){
+			if (label){
+				socket.send(JSON.stringify({"msg":true, "interm":e.data[1].join("\n\n"), "id":counter, "label":label, "c": document.getElementById("fullContext").checked, "ln": myLang}));
+			} else {
+				socket.send(JSON.stringify({"msg":true, "interm":e.data[1].join("\n\n"), "id":counter, "c": document.getElementById("fullContext").checked, "ln": myLang}));
+			}
+		} else {
+			if (label){
+				socket.send(JSON.stringify({"msg":true, "final":e.data[1].join("\n\n"), "id":counter, "label":label, "c": document.getElementById("fullContext").checked, "ln": myLang}));
+			} else {
+				socket.send(JSON.stringify({"msg":true, "final":e.data[1].join("\n\n"), "id":counter, "c": document.getElementById("fullContext").checked, "ln": myLang}));
+			}
+		}
+    } else if (e.data[0] === "load_model_reply" && e.data[1]) {
+        status(e.data[1]);
+    } else if (e.data[0] === "import_reply" && e.data[1]) {
+        modelRegistry = e.data[1];
+        version = e.data[2];
+        init();
+    }
+};
+const isSupported = (lngFrom, lngTo) => {
+    return true;
+}
+const loadModel = () => {
+    const lngFrom = langFrom.value;
+    const lngTo = langTo.value;
+    if (lngFrom !== lngTo) {
+        if (!isSupported(lngFrom, lngTo)) {
+            status("Language pair is not supported");
+            document.getElementById("output").innerText = "";
+            return;
+        }
+        status(`Installing model...`);
+        console.log(`Loading model '${lngFrom}${lngTo}'`);
+        worker.postMessage(["load_model", lngFrom, lngTo]);
+    } else {
+        const input = document.getElementById("input").value;
+        document.getElementById("output").innerText = "";
+    }
+};
+const findFirstSupportedTo = () => {
+    return Object.entries(supportedToCodes).find(([code, ]) => code !== langFrom.value)[0]
+}
+langFrom.addEventListener("change", e => {
+    const setToCode = (currentTo !== langFrom.value)
+      ? currentTo
+      : findFirstSupportedTo();
+	myLangCode = langFrom.value.split("-")[0];
+	if (myLangCode in supportedFromCodes) {
+		console.log("guessing input language is", myLangCode);
+		setFromCode = myLangCode;
+	}
+	recognition.stop();
+    setLangs(langTo, supportedToCodes, setToCode, langFrom.value);
+    loadModel();
+});
+langTo.addEventListener("change", e => {
+    currentTo = langTo.value;
+    loadModel();
+});
+const setLangs = (selector, langsToSet, value, exlcude) => {
+    selector.innerHTML = "";
+    for (const [code, type] of Object.entries(langsToSet)) {
+        if (code === exlcude) continue;
+        let name = langs[code];
+        if (type === "dev") name += " (Beta)";
+        selector.innerHTML += "<option value='"+code+"'>"+name+"</option>";
+    }
+    selector.value = value;
+}
+function init() {
+    supportedFromCodes["en"] = "prod";
+    supportedToCodes["en"] = "prod";
+    for (const [langPair, value] of Object.entries(modelRegistry)) {
+        const firstLang = langPair.substring(0, 2);
+        const secondLang = langPair.substring(2, 4);
+        if (firstLang !== "en") supportedFromCodes[firstLang] = value.model.modelType;
+        if (secondLang !== "en") supportedToCodes[secondLang] = value.model.modelType;
+    }
+    let setFromCode = "en";
+    if (myLang) {
+        myLangCode = myLang.split("-")[0];
+        if (myLangCode in supportedFromCodes) {
+            console.log("guessing input language is", myLangCode);
+            setFromCode = myLangCode;
+        }
+    }
+    setLangs(langFrom, supportedFromCodes, setFromCode, null);
+    const setToCode = targetCode;
+    setLangs(langTo, supportedToCodes, setToCode, setFromCode);
+    currentTo = setToCode;
+    loadModel();
+}
+function updateURL(param, force=false) {
+	var para = param.split('=');
+	if (!(urlParams.has(para[0].toLowerCase()))){
+		if (history.pushState){
+			var arr = window.location.href.split('?');
+			var newurl;
+			if (arr.length > 1 && arr[1] !== '') {
+				newurl = window.location.href + '&' +param;
+			} else {
+				newurl = window.location.href + '?' +param;
+			}
+			window.history.pushState({path:newurl},'',newurl);
+		}
+	} else if (force){
+		if (history.pushState){
+			var href = new URL(window.location.href);
+			if (para.length==1){
+				href.searchParams.set(para[0].toLowerCase(), "");
+			} else {
+				href.searchParams.set(para[0].toLowerCase(), para[1]);
+			}
+			log(href.toString());
+			window.history.pushState({path:href.toString()},'',href.toString());
+		}
+	}
+}
+function generateStreamID(){
+	var text = "";
+	var possible = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+	for (var i = 0; i < 7; i++){
+		text += possible.charAt(Math.floor(Math.random() * possible.length));
+	}
+	return text;
+};
+var roomID = "test";
+if (urlParams.has("room")){
+	roomID = urlParams.get("room");
+} else if (urlParams.has("ROOM")){
+	roomID = urlParams.get("ROOM");
+} else {
+	roomID = generateStreamID();
+	updateURL("room="+roomID);
+}
+var url = document.URL.substr(0,document.URL.lastIndexOf('/'));
+document.getElementById("shareLink").href= url+"/overlay?room="+roomID;
+document.getElementById("shareLink").innerHTML = url+"/overlay?room="+roomID;
+navigator.clipboard.writeText(url+"/overlay?room="+roomID).then(() => {
+}, () => {
+});
+var socket;
+function connectWebSocket() {
+  socket = new WebSocket("wss://api.caption.ninja:443");
+  socket.onclose = function() {
+    console.log("WebSocket connection closed. Attempting to reconnect...");
+    setTimeout(connectWebSocket, 500);
+  };
+  socket.onopen = function() {
+    console.log("WebSocket connected. Joining room...");
+    socket.send(JSON.stringify({"join":roomID}));
+  };
+  socket.onerror = function(error) {
+    console.error("WebSocket error:", error);
+	setTimeout(connectWebSocket, 5000);
+  };
+}
+connectWebSocket();
+var transcript = '';
+var last_transcription  = "";
+var second_transcription = "";
+var idle = null;
+var recognition = null;
+setup();
+var ends = 0;
+var sanitize = function(string) {
+	var temp = document.createElement('div');
+	temp.textContent = string;
+	return temp.textContent
+		.substring(0, Math.min(temp.textContent.length, 500))
+		.trim();
+};
+function setup(){
+	if ('webkitSpeechRecognition' in window){
+		recognition = new webkitSpeechRecognition();
+		if (myLang && myLangCode){
+			if (myLang.split("-")[0] == myLangCode){
+				recognition.lang = myLang;
+			} else {
+				recognition.lang = myLangCode;
+			}
+		} else if (myLangCode){
+			recognition.lang = myLangCode;
+		} else if (myLang){
+			recognition.lang = myLang;
+		}
+		recognition.continuous = true;
+		recognition.interimResults = true;
+		recognition.onstart = function(){
+			console.log("started transcription");
+			setTimeout(function(){
+				ends = 0;
+			}, 2000);
+		};
+		recognition.onerror = function(event){
+			console.error(event);
+		};
+		recognition.onend = function(e){
+			console.log("Stopped transcription");
+			if (event.type === "end"){
+				ends += 1;
+			}
+			if (ends > 3){
+				alert("WARNING: Cannot enable transcription service...");
+			} else {
+				recognition.start();
+			}
+		};
+		recognition.onresult = function(event){
+			counter+=1;
+			var interim_transcript = '';
+			if(typeof(event.results) == 'undefined'){
+				console.log(event);
+				return;
+			}
+			var isFinal = false;
+			let new_transcript = '';
+			for(var i = event.resultIndex; i < event.results.length; ++i){
+				if (event.results[i].isFinal){
+					isFinal = true;
+				}
+				if (event.results[i][0].transcript){
+					new_transcript += ' ' + sanitize(event.results[i][0].transcript);
+				}
+			}
+			new_transcript = new_transcript.trim();
+			if (new_transcript){
+				transcript = new_transcript;
+				if (isFinal){
+					console.log("final transcript:", transcript);
+				}
+				document.getElementById("input").value = transcript;
+				if (document.getElementById("fullContext").checked){
+					translateCall([second_transcription, last_transcription, transcript]
+						.filter(Boolean)
+						.join(' '), !isFinal);
+				} else {
+					translateCall(transcript, !isFinal);
+				}
+				if (isFinal){
+					second_transcription = last_transcription;
+					last_transcription = transcript + ". ";
+					transcript = "";
+				}
+			}
+		};
+		recognition.start();
+	}
+}
+</script>
+	</body>
+</html>

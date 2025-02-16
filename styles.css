@@ -1,0 +1,179 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400&display=swap');
+
+/* Add keyframes for the force field wave effect */
+@keyframes forceField {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* Keyframes for interim text animation */
+@keyframes pulseColor {
+    0% {
+        color: rgba(255, 255, 255, 0.6);
+    }
+    50% {
+        color: rgba(255, 255, 255, 0.8);
+    }
+    100% {
+        color: rgba(255, 255, 255, 0.6);
+    }
+}
+
+/* Keyframes for final text animation */
+@keyframes solidify {
+    0% {
+        color: rgba(255, 255, 255, 0.6);
+    }
+    100% {
+        color: rgba(255, 255, 255, 1);
+    }
+}
+
+button {
+    max-width: 600px;
+}
+
+body {
+    margin: 0;
+    padding: 0 10px;
+    border: 0;
+    display: flex;
+    flex-direction: column-reverse;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    min-height: 0;
+    max-height: 100vh;
+    overflow-y: auto;
+    background-color: #000000;
+}
+
+/* Base text styles that apply to all text elements */
+.output, #interm, input, a, .manual-output, .output span, .manual-output span {
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 400;
+}
+
+.output {
+    margin: 0;
+    color: white;
+    font-size: 3.2em;
+    line-height: 0.9em;
+    letter-spacing: -0.01em;
+    padding: 0;
+    text-shadow: 0.05em 0.05em 0px rgba(0,0,0,1);
+    width: fit-content;
+    max-width: 100%;
+}
+
+/* Common styles for both interim and final text */
+.output span, #interm span {
+    background-color: black;
+    padding: 8px 8px 8px 8px;
+    margin: 0 0 8px 0;
+    display: inline-block;
+    text-transform: none;
+    width: fit-content;
+    max-width: 100%;
+}
+
+/* Interim text styling */
+#interm span {
+    color: rgba(255, 255, 255, 0.6);
+    animation: pulseColor 2s ease-in-out infinite;
+    transition: all 0.3s ease-out;
+}
+
+/* Final text styling */
+.output span {
+    animation: solidify 0.5s ease-out forwards;
+}
+
+a {
+    color: white;
+    font-size: 1.2em;
+    text-transform: none;
+}
+
+.github {
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAd5JREFUOE+d1MurjlEUBvDfIZQZShEGmMhQiZGZlAlyK4eEAZHcyiVRyq1cUq5FwsD1MJGJiT/AzEzRcR8xMnGOW89pv9q9fScfe/J977o8e61nP2v16HzGYBWWYA4mlbBPeI5HuI9v7fSeDnircRqTh7msMX/ALtyr46gBL/0HWAMe0G01YNq8Xbz5PYuN2ISvCHc5oWEsruA69mJF8a0Mr6kwD/C64mw3zpSgCfjc6nE8vhRbAE+U/+8xI4DrcKNKOol9XfJ4CimgOb0BfIilxfIds/GyS8BZeIGRJf5BAN9gWjE8xcIuwZqwZ1hQPvoDOIBRxRCiN/wj4C30lpyBNmAmYNk/Aj7G4pIz2G75I6Y2Iu0CONwlZ2Ldcl+rqmjvWhdgCdmCi1Xs0KOsxc3C5WDhcw8uI9+dzugyVZFNw3/i1jTCfoVIJmo/VDiJeJ9gPX4U1CRHs4swrnXTO8xsZjlAd9GP+WU1zcPxckGde7WMZbvy5eirl8N5bMUxHMSvYdo9igMt3znsiK29vuLI1ojYU+2dwmWdnwv3V4YskozfUAGdFmzaz4KdgiM43KomNGTW32JnGd0/IZ0A48wrhpPMdFZ+feZievjqpILf7lRg3csIRqAAAAAASUVORK5CYII=");
+    background-color: transparent !important;
+    width: 20px;
+    height: 20px;
+    background-repeat: no-repeat;
+    background-size: contain;
+    display: inline-block;
+    top: 2px;
+    position: relative;
+    left: 2px;
+    filter: brightness(0) invert(1);
+    -webkit-filter: brightness(0) invert(1);
+}
+
+.small-text-container {
+    background-color: black;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+/* Styles from manual.html */
+#interm {
+    color: rgb(255, 255, 255);
+    margin: 5px;
+}
+
+/* Styles for manual.html output */
+.manual-output {
+    color: black;
+}
+
+.manual-output span {
+    background-color: transparent;
+    background: linear-gradient(
+        90deg,
+        rgba(238, 119, 82, 0.8) 0%,
+        rgba(231, 60, 126, 0.8) 20%,
+        rgba(35, 166, 213, 0.8) 40%,
+        rgba(35, 213, 171, 0.8) 60%,
+        rgba(238, 119, 82, 0.8) 80%,
+        rgba(231, 60, 126, 0.8) 100%
+    );
+    background-size: 200% 100%;
+    animation: forceField 3s linear infinite;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: none;
+}
+
+/* Hide status div by default */
+#status {
+    display: none;
+}
+
+/* Remove redundant font-family declarations since they're now handled by the base styles */
+input {
+    width: 100%;
+    padding: 20px;
+    margin: 10px 0;
+    font-size: 2em;
+}
+
+#output, #interm {
+    width: fit-content;
+    max-width: 100%;
+}
+
+/* Update the download button styles */
+.download-button, button[data-key*="transcription"] {
+    display: none;  /* Hidden by default */
+}
+
+.download-button.show, button[data-key*="transcription"].show {
+    display: block;  /* Show when .show class is added */
+} 

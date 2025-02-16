@@ -1,0 +1,405 @@
+<html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
+	<meta content="utf-8" http-equiv="encoding" />
+	<meta name="copyright" content="&copy; 2020 Steve Seguin" />
+	<link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon" />
+	<!-- Primary Meta Tags -->
+	<title>CAPTION.Ninja</title>
+	<meta name="title" content="CAPTION.Ninja" />
+	<meta name="description" content="This is a free-to-use captioning tool for OBS. Speech-to-text is done using Machine Learning" />
+	<meta name="author" content="Steve Seguin" />
+	
+	<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+	<div id="interm" class="output">
+	<font style='font-size:60%;line-height: 1.4em;'><span>Welcome to CAPTION.Ninja - A Free Captioning Tool</span></font>
+	<div class="small-text-container">
+		<font style='font-size:30%;line-height: 1.4em;'>
+		<span>
+		<br />
+		<strong>📖 Quick Start:</strong>
+		<ol>
+			<li>Accept the microphone permissions when prompted.</li>
+			<li>Start speaking - your words will appear as captions.</li>
+			<li>For live streaming, add this link to OBS as a browser source overlay: 👉 <a id="shareLink" href="overlay.html" target='_blank'>*ERROR GENERATING LINK*</a></li>
+		</ol>
+
+		<strong>💡 Tips:</strong>
+		<ul>
+			<li>Use Google Chrome for best results.</li>
+			<li>To save the transcription: Select all (CTRL+A), copy (CTRL+C), and paste into a text editor (CTRL+V).</li>
+			<li>Change languages by updating the URL. <a href="https://cloud.google.com/speech-to-text/docs/languages" target="_blank">View language codes here</a></li>
+		</ul>
+
+		<strong>🔬🛠️ Advanced Features:</strong>
+		<ul>
+			<li>Try our <a href='./translate'>LIVE TRANSLATION version here</a>❗</li>
+			<li>Use a <a href='https://www.vb-audio.com/Cable/'>Virtual Audio Cable</a> to caption from other audio sources</li>
+			<li>Add &translate={bg,cs,nl,en,et,de,fr,is,it,nb,nn,fa,pl,pt,ru,es,uk} to the overlay page URL for translation</li>
+		</ul>
+
+		<strong>🆘 Need Help?</strong>
+		<ul>
+			<li>Check out more options and details on <a href='https://github.com/steveseguin/captionninja'>GitHub <span class="github"></span></a></li>
+			<li>Ask for help on <a href='https://discord.vdo.ninja'>our Discord server<span class="discord"></span></a> - @steve for help there</li>
+		</ul>
+		</span>
+		</font>
+	</div>
+	<br />
+	</div>
+	
+	<div id="output" class="output"></div>
+	
+	<script>
+	function download(filename, text) {
+	  var element = document.createElement('a');
+	  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+	  element.setAttribute('download', filename);
+	  element.style.display = 'none';
+	  document.body.appendChild(element);
+	  element.click();
+	  document.body.removeChild(element);
+	}
+	function getOldStorage() {
+		var values = [],
+			keys = Object.keys(localStorage),
+			i = keys.length;
+		while ( i-- ) {
+			values.push( localStorage.getItem(keys[i]) );
+		}
+		return values;
+	}
+	function removeStorage(cname){
+		localStorage.removeItem(cname);
+	}
+	function setStorage(cname, cvalue, exdays=999){
+		var now = new Date();
+		var item = {
+			value: cvalue,
+			expiry: now.getTime() + (exdays * 24 * 60 * 60 * 1000),
+		};
+		try{
+			localStorage.setItem(cname, JSON.stringify(item));
+		}catch(e){errorlog(e);}
+	}
+	function getStorage(cname) {
+		try {
+			var itemStr = localStorage.getItem(cname);
+		} catch(e){
+			errorlog(e);
+			return;
+		}
+		if (!itemStr) {
+			return "";
+		}
+		var item = JSON.parse(itemStr);
+		var now = new Date();
+		if (now.getTime() > item.expiry) {
+			localStorage.removeItem(cname);
+			return "";
+		}
+		return item.value;
+	}
+	function updateURL(param, force=false) {
+		var para = param.split('=');
+		if (!(urlParams.has(para[0].toLowerCase()))){
+			if (history.pushState){
+				var arr = window.location.href.split('?');
+				var newurl;
+				if (arr.length > 1 && arr[1] !== '') {
+					newurl = window.location.href + '&' +param;
+				} else {
+					newurl = window.location.href + '?' +param;
+				}
+				window.history.pushState({path:newurl},'',newurl);
+			}
+		} else if (force){
+			if (history.pushState){
+				var href = new URL(window.location.href);
+				if (para.length==1){
+					href.searchParams.set(para[0].toLowerCase(), "");
+				} else {
+					href.searchParams.set(para[0].toLowerCase(), para[1]);
+				}
+				log(href.toString());
+				window.history.pushState({path:href.toString()},'',href.toString());
+			}
+		}
+	}
+	(function (w) {
+		w.URLSearchParams = w.URLSearchParams || function (searchString) {
+			var self = this;
+			self.searchString = searchString;
+			self.get = function (name) {
+				var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(self.searchString);
+				if (results == null) {
+					return null;
+				}
+				else {
+					return decodeURI(results[1]) || 0;
+				}
+			};
+		};
+	})(window);
+	var urlParams = new URLSearchParams(window.location.search);
+	var sanitize = function(string) {
+		var temp = document.createElement('div');
+		temp.textContent = string;
+		return temp.textContent
+			.substring(0, Math.min(temp.textContent.length, 500))
+			.trim();
+	};
+	function generateStreamID(){
+		var text = "";
+		var possible = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+		for (var i = 0; i < 7; i++){
+			text += possible.charAt(Math.floor(Math.random() * possible.length));
+		}
+		return text;
+	};
+	var roomID = "test";
+	if (urlParams.has("room")){
+		roomID = urlParams.get("room");
+	} else if (urlParams.has("ROOM")){
+		roomID = urlParams.get("ROOM");
+	} else {
+		roomID = generateStreamID();
+		updateURL("room="+roomID);
+	}
+	var label = false;
+	if (urlParams.has("label")){
+		label = urlParams.get("label");
+	}
+	var myLang = "en-US";
+	if (urlParams.has("lang")){
+		myLang = urlParams.get("lang");
+	} else {
+		updateURL("lang="+myLang);
+	}
+	console.log("Language: "+myLang);
+	var srtFile = "";
+	var timestamp_start = null
+	var timestamp_stop = null
+	var timestamp_intern  = null;
+	var logcounter=0;
+	var counter=0;
+	var url = document.URL.substr(0,document.URL.lastIndexOf('/'));
+	var oldSaves = Object.keys(localStorage);
+	if (oldSaves.length){
+		for (var i =0;i<oldSaves.length;i++){
+			if (oldSaves.length - 1== i){
+				if (oldSaves[i].startsWith("transcription_"+roomID+"_")){
+					try {
+						var button = document.createElement("button");
+						button.onclick = function(){
+							var srtFile = getStorage(this.dataset.key);
+							download(this.dataset.key+".srt", srtFile);
+							localStorage.removeItem(this.dataset.key);
+						};
+						button.dataset.key = oldSaves[i];
+						button.innerHTML = "Download previous saved transcription";
+						document.body.prepend(button);
+					}catch(e){console.error(e);}
+				}
+			} else if (oldSaves[i].startsWith("transcription_"+roomID+"_")){
+				localStorage.removeItem(i);
+			}
+		}
+	}
+	document.getElementById("shareLink").href= url+"/overlay?room="+roomID;
+	document.getElementById("shareLink").innerHTML = url+"/overlay?room="+roomID;
+	navigator.clipboard.writeText(url+"/overlay?room="+roomID).then(() => {
+    }, () => {
+    });
+	var apiKey = false;
+	var socket;
+	var mediaStream = null;
+	function connectWebSocket() {
+	    if (socket) {
+			socket.close();
+			socket = null;
+		}
+		socket = new WebSocket("wss://api.caption.ninja:443");
+		socket.onclose = function() {
+			console.log("WebSocket connection closed. Attempting to reconnect...");
+			setTimeout(connectWebSocket, 500);
+		};
+		socket.onopen = function() {
+			console.log("WebSocket connected. Joining room...");
+			socket.send(JSON.stringify({"join":roomID}));
+		};
+		socket.onerror = function(error) {
+			console.error("WebSocket error:", error);
+			if (socket) {
+				socket.close();
+				socket = null;
+			}
+			setTimeout(connectWebSocket, 5000);
+		};
+	}
+	connectWebSocket();
+	var ends = 0;
+	var final_transcript = '';
+	var interim_transcript = "";
+	var recognition = null;
+	var idle = null;
+	async function setup() {
+		try {
+			// Only request media stream if we don't already have one
+			if (!mediaStream) {
+				const storedPermission = localStorage.getItem('micPermission');
+				
+				if (storedPermission !== 'granted') {
+					try {
+						mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+						localStorage.setItem('micPermission', 'granted');
+					} catch (e) {
+						console.error("Failed to get media stream:", e);
+						alert("Please enable microphone permissions to use the captioning service.");
+						return;
+					}
+				}
+			}
+
+			if ('webkitSpeechRecognition' in window) {
+				if (recognition) {
+					recognition.onend = null;
+					recognition.abort();
+				}
+				recognition = new webkitSpeechRecognition();
+				if (myLang) {
+					recognition.lang = myLang;
+				}
+				recognition.continuous = true;
+				recognition.interimResults = true;
+				recognition.onstart = function() {
+					console.log("started transcription");
+					setTimeout(function() {
+						ends = 0;
+					}, 2000);
+				};
+				recognition.onerror = function(event) {
+					console.log(event);
+					if (event.error === 'not-allowed') {
+						localStorage.removeItem('micPermission');
+						mediaStream = null;
+					}
+				};
+				recognition.onend = function(e) {
+					console.log(e);
+					console.log("Stopped transcription");
+					if (e.type === "end") {
+						ends += 1;
+					}
+					if (ends > 3) {
+						alert("WARNING: Cannot enable transcription service\n\nThe service will fail completely if more than one transcription session is currently active on your computer.\n\nPlease close other Caption.Ninja tabs or other transcription services and then wait a few minutes before retrying.\n\nIt might also fail if your browser does not offer a transcription service; use the official Chrome browser instead if unsure.");
+					}
+					setup();
+				};
+				recognition.onresult = function(event){
+					counter+=1;
+					var interim_transcript = '';
+					if(typeof(event.results) == 'undefined'){
+						return;
+					}
+					let new_final_transcript = '';
+					for(var i = event.resultIndex; i < event.results.length; ++i){
+						if(event.results[i].isFinal){
+							new_final_transcript += ' ' + sanitize(event.results[i][0].transcript);
+						} else {
+							interim_transcript += " " +sanitize(event.results[i][0].transcript);
+							interim_transcript = interim_transcript.trim();
+						}
+					}
+					final_transcript = new_final_transcript.trim();
+					if (final_transcript){
+						console.log("FINAL:", final_transcript);
+						document.getElementById("output").innerHTML+="<span id='final_"+counter+"'>"+final_transcript+"</span><br />";
+						document.getElementById("interm").innerHTML="";
+						try {
+							if (timestamp_start===null){
+								timestamp_start = Date.now();
+								timestamp_intern = Date.now();
+							}
+							timestamp_stop = Date.now();
+							timestamp_stop = Date.now() - timestamp_start;
+							var date = new Date(0);
+							date.setSeconds(timestamp_stop/1000);
+							timestamp_stop = date.toISOString().replace(".",",").replace("1970-01-01T","");
+							timestamp_stop = timestamp_stop.substring(0, timestamp_stop.length - 1);
+							timestamp_intern -= timestamp_start;
+							var date = new Date(0);
+							date.setSeconds(timestamp_intern/1000);
+							timestamp_intern = date.toISOString().replace(".",",").replace("1970-01-01T","");
+							timestamp_intern = timestamp_intern.substring(0, timestamp_intern.length - 1);
+						} catch(e){console.error(e);}
+						try {
+							logcounter+=1;
+							srtFile += logcounter + "\n";
+							srtFile += timestamp_intern + " --\> " + timestamp_stop + "\n";
+							timestamp_intern=null;
+							srtFile += ">> " + final_transcript + "\n\n";
+							setStorage("transcription_"+roomID+"_"+timestamp_start, srtFile, 1);
+							if (logcounter===1){
+								var button = document.createElement("button");
+								button.onclick = function(){
+									download("transcription_"+roomID+"_"+timestamp_start+".srt", srtFile);
+								};
+								button.innerHTML = "Download transcription";
+								button.style.position = "fixed";
+								button.style.top = "0";
+								button.style.left = "0";
+								button.className = "download-button";
+								document.body.appendChild(button);
+							}
+						} catch(e){console.error(e);}
+						try {
+							if (label){
+								socket.send(JSON.stringify({"msg":true, "final":final_transcript, "id":counter, "label":label, "ln": myLang}));
+							} else {
+								socket.send(JSON.stringify({"msg":true, "final":final_transcript, "id":counter, "ln": myLang}));
+							}
+							final_transcript="";
+							interim_transcript="";
+							timestamp_start = null;
+							timestamp_stop = null;
+							timestamp_intern = null;
+						} catch(e){
+							console.error(e);
+						}
+					} else {
+						if (timestamp_start===null){
+							timestamp_start = Date.now();
+						}
+						if (timestamp_intern===null){
+							timestamp_intern = Date.now();
+						}
+						console.log("INTERM:", interim_transcript);
+						document.getElementById("interm").innerHTML="<span>"+interim_transcript+"</span><br />";
+						try {
+							if (label){
+								socket.send(JSON.stringify({"msg":true, "interm":interim_transcript, "id":counter, "label":label, "ln": myLang}));
+							} else {
+								socket.send(JSON.stringify({"msg":true, "interm":interim_transcript, "id":counter, "ln": myLang}));
+							}
+						} catch(e){
+							console.error(e);
+						    interim_transcript="";
+						}
+					}
+				};
+				recognition.start();
+			}
+		} catch (err) {
+			console.error("Error with microphone permissions:", err);
+			alert("Please enable microphone permissions to use the captioning service. Once granted, the permission will be saved permanently.");
+		}
+	}
+	setup();
+	</script>
+	</body>
+</html>

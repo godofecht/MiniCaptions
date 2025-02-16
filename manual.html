@@ -1,0 +1,183 @@
+<html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
+	<meta content="utf-8" http-equiv="encoding" />
+	<meta name="copyright" content="&copy; 2020 Steve Seguin" />
+	<link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon" />
+	<!-- Primary Meta Tags -->
+	<title>CAPTION.Ninja</title>
+	<meta name="title" content="CAPTION.Ninja" />
+	<meta name="description" content="This is a free-to-use captioning tool for OBS. Speech-to-text is done using Machine Learning" />
+	<meta name="author" content="Steve Seguin" />
+	
+	<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+	<input type="textarea" id="userinput" />
+	<div id="interm" class="output manual-output">
+		<font style='color:black;font-size:60%;line-height: 1.4em;'><div>This is a free-to-use captioning tool.</div></font>
+		<font style='color:black;font-size:30%;line-height: 1.4em;'>
+		<div><br /><br />
+			The output of this app is mirrored here: <a id="shareLink" href="overlay.html" target='_blank'>*ERROR GENERATING LINK*</a>. Add it to OBS as a browser source overlay if wishing to use it for a live stream.
+		</div></font>
+		<br /><br />
+	</div>
+	<div id="output" class="output manual-output"></div>
+	
+	<script>
+	
+	function updateURL(param, force=false) {
+		var para = param.split('='); 
+		if (!(urlParams.has(para[0].toLowerCase()))){
+			if (history.pushState){
+				
+				var arr = window.location.href.split('?');
+				var newurl;
+				if (arr.length > 1 && arr[1] !== '') {
+					newurl = window.location.href + '&' +param;
+				} else {
+					newurl = window.location.href + '?' +param;
+				}
+				
+				window.history.pushState({path:newurl},'',newurl);
+			}
+		} else if (force){
+			if (history.pushState){
+				var href = new URL(window.location.href);
+				if (para.length==1){
+					href.searchParams.set(para[0].toLowerCase(), "");
+				} else {
+					href.searchParams.set(para[0].toLowerCase(), para[1]);
+				}
+				log(href.toString());
+				window.history.pushState({path:href.toString()},'',href.toString());
+			}
+		}
+	}
+
+	
+	(function (w) {
+		w.URLSearchParams = w.URLSearchParams || function (searchString) {
+			var self = this;
+			self.searchString = searchString;
+			self.get = function (name) {
+				var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(self.searchString);
+				if (results == null) {
+					return null;
+				}
+				else {
+					return decodeURI(results[1]) || 0;
+				}
+			};
+		};
+
+	})(window);
+	var urlParams = new URLSearchParams(window.location.search);
+	
+	
+	function generateStreamID(){
+		var text = "";
+		var possible = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+		for (var i = 0; i < 7; i++){
+			text += possible.charAt(Math.floor(Math.random() * possible.length));
+		}
+		return text;
+	};
+	
+	var label = false;
+	
+	if (urlParams.has("label")){
+		label = urlParams.get("label");
+	} 
+	
+	var roomID = "test";
+	
+	if (urlParams.has("room")){
+		roomID = urlParams.get("room");
+	} else if (urlParams.has("ROOM")){
+		roomID = urlParams.get("ROOM");
+	} else {
+		roomID = generateStreamID();
+		updateURL("room="+roomID);
+	}
+	
+	
+	var counter=0;
+	var url = document.URL.substr(0,document.URL.lastIndexOf('/'));
+	
+	document.getElementById("shareLink").href= url+"/overlay?room="+roomID;
+	document.getElementById("shareLink").innerHTML = url+"/overlay?room="+roomID;
+
+	navigator.clipboard.writeText(url+"/overlay?room="+roomID).then(() => {
+      /* clipboard successfully set */
+    }, () => {
+      /* clipboard write failed */
+    }); 
+
+	var apiKey = false;
+
+	var socket;
+
+	function connectWebSocket() {
+	  socket = new WebSocket("wss://api.caption.ninja:443");
+
+	  socket.onclose = function() {
+		console.log("WebSocket connection closed. Attempting to reconnect...");
+		setTimeout(connectWebSocket, 500); // Try to reconnect after 5 seconds
+	  };
+
+	  socket.onopen = function() {
+		console.log("WebSocket connected. Joining room...");
+		socket.send(JSON.stringify({"join":roomID}));
+	  };
+
+	  // Add error handling
+	  socket.onerror = function(error) {
+		console.error("WebSocket error:", error);
+		setTimeout(connectWebSocket, 5000); // Try to reconnect after 5 seconds
+	  };
+	}
+
+	// Initial connection
+	connectWebSocket();
+	
+	function interResults(){
+		counter+=1;
+		var interim_transcript = document.getElementById("userinput").value;
+		document.getElementById("interm").innerHTML = interim_transcript;
+		try {
+			socket.send(JSON.stringify({"msg":true, "interm":interim_transcript, "id":counter, "label":label}));
+		} catch(e){
+			interim_transcript="";
+		}
+	}
+		
+	function finalResults(){
+		counter+=1;
+		var final_transcript = document.getElementById("useri	nput").value;
+		try {
+			if (final_transcript==""){
+				socket.send(JSON.stringify({"msg":true, "final":"", "id":counter, "label":label}));
+			} else {
+				socket.send(JSON.stringify({"msg":true, "final":final_transcript, "id":counter, "label":label}));
+			}
+		} catch(e){
+			final_transcript="";
+		}
+		document.getElementById("output").innerHTML+=final_transcript;
+		document.getElementById("interm").innerHTML="";
+		document.getElementById("userinput").value = "";
+	}
+				
+	document.getElementById("userinput").addEventListener("keyup", function(event) {
+		if (event.code === 'Enter') {
+			finalResults();
+		} else {
+			interResults();
+		}
+	});
+	
+	</script>
+	</body>
+</html>
