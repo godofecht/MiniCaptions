@@ -110,3 +110,29 @@ The actual voice to text transcriptions are done usually on Google cloud servers
 
 ### Disclaimers
 I am not responsible if this app fails to work or whatever else. It is provided as-is without warranty or support. I do not take responsibility for any liability.
+
+## Recent Updates - Abhishek Shivakumar 2025-02-16
+
+### UI/UX Improvements
+- Switched to Open Sans font for better readability
+- Added fluid animations for interim and final text
+- Increased spacing between caption lines (8px gap)
+- Improved text visibility with proper padding for descenders
+- Hidden download buttons by default (press 's' to show/hide)
+
+### Technical Improvements
+- Moved all CSS to separate styles.css file
+- Improved microphone permission handling with persistent storage
+- Added auto-sizing window functionality
+- Fixed text positioning consistency between interim and final states
+- Maintained lowercase text formatting throughout
+
+### Visual Changes
+- Added smooth color transitions between interim and final text
+- Improved text background handling
+- Fixed GitHub icon display issues
+- Added proper padding and margins for better text layout
+
+This will be updated and improved to make it more user friendly and efficient for generic use, such as for live streaming and podcasting.
+
+This was used to replicate neural speech decoding and transcrition in real time.
